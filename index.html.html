@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Convite Digital e Links - WS MUNDO TECH</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e9ecef;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container-ferramenta {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            max-width: 650px;
+            width: 100%;
+            margin: 20px auto;
+        }
+        .container-ferramenta h3 {
+            color: #333;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        .campo-grupo {
+            margin-bottom: 15px;
+        }
+        .campo-grupo label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        .campo-grupo input[type="text"],
+        .campo-grupo input[type="file"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        /* --- NOVO: Estilos para a seção de copiar links --- */
+        .copy-link-section {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        .copy-link-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .copy-link-wrapper input[readonly] {
+            flex-grow: 1;
+            background-color: #f4f4f4;
+            cursor: default;
+        }
+        .btn-copiar {
+            padding: 10px 15px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .btn-copiar:hover {
+            background-color: #0056b3;
+        }
+        .btn-copiar.copiado {
+            background-color: #28a745; /* Verde sucesso */
+        }
+        
+        /* --- AJUSTES PARA O FORMATO A4 --- */
+        #convite-para-pdf {
+            width: 100%;
+            aspect-ratio: 210 / 297;
+            max-width: 595px;
+            margin: 20px auto;
+            border: 1px solid #ccc;
+            position: relative;
+            background-color: #f8f9fa;
+            background-size: cover;
+            background-position: center;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #placeholder-texto { color: #888; }
+        .botoes-sobre-imagem {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 80%;
+            max-width: 400px;
+        }
+        .btn-link {
+            text-decoration: none;
+            padding: 14px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            color: white;
+            text-align: center;
+            display: block;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        .btn-link:hover { transform: scale(1.03); }
+        #btn-whatsapp { background-color: #25D366; }
+        #btn-maps { background-color: #4285F4; }
+        #btn-exportar-pdf {
+            background-color: #d9534f;
+            color: white;
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            margin-top: 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        #btn-exportar-pdf:hover { background-color: #c9302c; }
+    </style>
+</head>
+<body>
+
+    <div class="container-ferramenta">
+        <h3>Gerador de Convite Digital e Links - WS MUNDO TECH</h3>
+
+        <div class="campo-grupo">
+            <label for="whatsapp-numero">Número do WhatsApp - Apenas DDD+Nº do celular sem espaços (Ex: 32999998888)</label>
+            <input type="text" id="whatsapp-numero" placeholder="Inclua o código do país e DDD">
+        </div>
+        <div class="campo-grupo">
+            <label for="whatsapp-msg">Mensagem de Confirmação</label>
+            <input type="text" id="whatsapp-msg" value="Olá! Confirmo minha presença no evento.">
+        </div>
+        <div class="campo-grupo">
+            <label for="maps-endereco">Endereço Completo</label>
+            <input type="text" id="maps-endereco" placeholder="Rua, Número, Bairro, Cidade, Estado">
+        </div>
+        
+        <div class="copy-link-section">
+            <div class="campo-grupo">
+                <label for="link-whatsapp-display">Link do WhatsApp Gerado</label>
+                <div class="copy-link-wrapper">
+                    <input type="text" id="link-whatsapp-display" readonly>
+                    <button class="btn-copiar" id="btn-copiar-whatsapp">Copiar</button>
+                </div>
+            </div>
+            <div class="campo-grupo">
+                <label for="link-maps-display">Link do Google Maps Gerado</label>
+                <div class="copy-link-wrapper">
+                    <input type="text" id="link-maps-display" readonly>
+                    <button class="btn-copiar" id="btn-copiar-maps">Copiar</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="campo-grupo">
+            <label for="image-upload">Faça o upload da imagem de fundo (Opcional para gerar PDF)</label>
+            <input type="file" id="image-upload" accept="image/*">
+        </div>
+        <h4>Pré-visualização (Proporção Retrato)</h4>
+        <div id="convite-para-pdf">
+             <span id="placeholder-texto">Aguardando upload de imagem de fundo...</span>
+            <div class="botoes-sobre-imagem">
+                <a href="#" id="btn-whatsapp" class="btn-link" target="_blank" rel="noopener noreferrer">Clique aqui para confirmar presença</a>
+                <a href="#" id="btn-maps" class="btn-link" target="_blank" rel="noopener noreferrer">Localização no Maps</a>
+            </div>
+        </div>
+        <button id="btn-exportar-pdf">Gerar e realizar o Download do PDF </button>
+
+    </div>
+
+    <script>
+        // Inicializa a biblioteca jsPDF
+        const { jsPDF } = window.jspdf;
+
+        // Elementos do HTML
+        const whatsappNumero = document.getElementById('whatsapp-numero');
+        const whatsappMsg = document.getElementById('whatsapp-msg');
+        const mapsEndereco = document.getElementById('maps-endereco');
+        const imageUpload = document.getElementById('image-upload');
+        const conviteParaPdf = document.getElementById('convite-para-pdf');
+        const placeholderTexto = document.getElementById('placeholder-texto');
+        const btnWhatsapp = document.getElementById('btn-whatsapp');
+        const btnMaps = document.getElementById('btn-maps');
+        const btnExportarPDF = document.getElementById('btn-exportar-pdf');
+        
+        // NOVOS elementos para copiar links
+        const linkWhatsappDisplay = document.getElementById('link-whatsapp-display');
+        const linkMapsDisplay = document.getElementById('link-maps-display');
+        const btnCopiarWhatsapp = document.getElementById('btn-copiar-whatsapp');
+        const btnCopiarMaps = document.getElementById('btn-copiar-maps');
+
+        let imagemCarregada = false;
+
+        function atualizarLinks() {
+            // Gera e atualiza link do WhatsApp
+            const numeroLimpo = whatsappNumero.value.replace(/\D/g, '');
+            const mensagemCodificada = encodeURIComponent(whatsappMsg.value);
+            const linkWpp = numeroLimpo ? `https://wa.me/${numeroLimpo}?text=${mensagemCodificada}` : '';
+            btnWhatsapp.href = linkWpp || '#';
+            linkWhatsappDisplay.value = linkWpp;
+
+            // Gera e atualiza link do Google Maps
+            const enderecoCodificado = encodeURIComponent(mapsEndereco.value);
+            const linkMaps = enderecoCodificado ? `https://www.google.com/maps/search/?api=1&query=${enderecoCodificado}` : '';
+            btnMaps.href = linkMaps || '#';
+            linkMapsDisplay.value = linkMaps;
+        }
+
+        // Event Listeners para os campos de input
+        whatsappNumero.addEventListener('input', atualizarLinks);
+        whatsappMsg.addEventListener('input', atualizarLinks);
+        mapsEndereco.addEventListener('input', atualizarLinks);
+
+        // Event Listener para upload de imagem
+        imageUpload.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    conviteParaPdf.style.backgroundImage = `url('${e.target.result}')`;
+                    placeholderTexto.style.display = 'none';
+                    imagemCarregada = true;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // NOVO: Função para copiar texto para a área de transferência
+        function copiarLink(inputElement, buttonElement) {
+            if (!inputElement.value) return;
+
+            navigator.clipboard.writeText(inputElement.value).then(() => {
+                const originalText = buttonElement.textContent;
+                buttonElement.textContent = 'Copiado!';
+                buttonElement.classList.add('copiado');
+                
+                setTimeout(() => {
+                    buttonElement.textContent = originalText;
+                    buttonElement.classList.remove('copiado');
+                }, 2000); // Volta ao normal após 2 segundos
+            }).catch(err => {
+                console.error('Falha ao copiar o link: ', err);
+                alert('Não foi possível copiar o link.');
+            });
+        }
+        
+        // Event Listeners para os botões de copiar
+        btnCopiarWhatsapp.addEventListener('click', () => copiarLink(linkWhatsappDisplay, btnCopiarWhatsapp));
+        btnCopiarMaps.addEventListener('click', () => copiarLink(linkMapsDisplay, btnCopiarMaps));
+
+        // Event Listener para o botão de exportar PDF
+        btnExportarPDF.addEventListener('click', function() {
+            if (!imagemCarregada) {
+                alert("Para gerar um PDF, por favor, faça o upload de uma imagem de fundo primeiro.");
+                return;
+            }
+
+            const a4Width = 595.28;
+            const a4Height = 841.89;
+            const previewRect = conviteParaPdf.getBoundingClientRect();
+            const scaleX = a4Width / previewRect.width;
+            const scaleY = a4Height / previewRect.height;
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+
+            html2canvas(conviteParaPdf, { scale: 2 }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                pdf.addImage(imgData, 'PNG', 0, 0, a4Width, a4Height);
+
+                const whatsappRect = btnWhatsapp.getBoundingClientRect();
+                const whatsappX = (whatsappRect.left - previewRect.left) * scaleX;
+                const whatsappY = (whatsappRect.top - previewRect.top) * scaleY;
+                const whatsappWidth = whatsappRect.width * scaleX;
+                const whatsappHeight = whatsappRect.height * scaleY;
+                pdf.link(whatsappX, whatsappY, whatsappWidth, whatsappHeight, { url: btnWhatsapp.href });
+
+                const mapsRect = btnMaps.getBoundingClientRect();
+                const mapsX = (mapsRect.left - previewRect.left) * scaleX;
+                const mapsY = (mapsRect.top - previewRect.top) * scaleY;
+                const mapsWidth = mapsRect.width * scaleX;
+                const mapsHeight = mapsRect.height * scaleY;
+                pdf.link(mapsX, mapsY, mapsWidth, mapsHeight, { url: btnMaps.href });
+                
+                pdf.save('convite-digital-A4.pdf');
+            });
+        });
+
+        // Inicia a função para garantir que os campos de link estejam preenchidos (ou vazios) ao carregar a página
+        atualizarLinks();
+    </script>
+
+</body>
+</html>
